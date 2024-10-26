@@ -40,7 +40,7 @@
 
   <script>
     // Set total number of files and valid extensions
-    const totalFiles = 60;
+    const totalFiles = 77;
     const extensions = ["jpg", "gif", "mp4"];
 
     // Generate a random number and select the corresponding file
@@ -63,7 +63,7 @@
     const mediaContainer = document.getElementById("media-container");
     if (selectedFile) {
       if (selectedFile.endsWith(".mp4")) {
-        mediaContainer.innerHTML = `<video src="${selectedFile}" autoplay controls loop></video>`;
+        mediaContainer.innerHTML = `<video src="${selectedFile}" autoplay controls loop preload="auto"></video>`;
       } else {
         mediaContainer.innerHTML = `<img src="${selectedFile}" alt="Random Image">`;
       }
