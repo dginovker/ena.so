@@ -38,7 +38,7 @@
       position: fixed;
       top: 20px;
       left: 50%;
-      transform: translateX(-50%) rotate(0deg);
+      transform: translateX(-50%);
       font-size: 24px;
       opacity: 0;
       transition: opacity 0.3s;
@@ -50,6 +50,7 @@
       justify-content: center;
       align-items: center;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transform-origin: center;
     }
 
     #reload-indicator.visible {
@@ -57,30 +58,40 @@
     }
 
     @keyframes spin {
-      from { transform: translateX(-50%) translateY(0) rotate(0deg); }
-      to { transform: translateX(-50%) translateY(0) rotate(360deg); }
+      from { transform: translateX(-50%) rotate(0deg); }
+      to { transform: translateX(-50%) rotate(360deg); }
+    }
+
+    @keyframes suggestPull {
+        0% { transform: translateX(-50%) rotate(0deg); }
+        40% { transform: translateX(-50%) translateY(40px) rotate(180deg); }
+        80% { transform: translateX(-50%) rotate(360deg); }
+        100% { transform: translateX(-50%) rotate(360deg); }
     }
 
     #reload-indicator.spinning {
       animation: spin 1s linear infinite;
     }
 
-    @keyframes suggestPull {
-        0% { transform: translateX(-50%) translateY(0) rotate(0deg); }
-        40% { transform: translateX(-50%) translateY(40px) rotate(180deg); }
-        80% { transform: translateX(-50%) translateY(0) rotate(360deg); }
-        100% { transform: translateX(-50%) translateY(0) rotate(360deg); }
-    }
-
     #reload-indicator.suggest-pull {
         opacity: 1;
         animation: suggestPull 1.5s ease-in-out;
+    }
+
+    /* Add this style for the icon */
+    .material-icons {
+      font-size: 24px;
     }
   </style>
 </head>
 <body>
   <!-- Add this right after the body tag -->
-  <div id="reload-indicator">↻</div>
+  <div id="reload-indicator">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M20 8c-1.4-2.8-4.3-4.8-7.7-4.8-4.8 0-8.7 3.9-8.7 8.7s3.9 8.7 8.7 8.7c3.5 0 6.5-2 7.9-5" stroke-linecap="round"/>
+      <path d="M20 2v6h-6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
   
   <!-- Container for the random media -->
   <div id="media-container"></div>
@@ -114,8 +125,8 @@
         const deltaY = e.clientY - startY;
         reloadIndicator.classList.add('visible');
         
-        // Move down and rotate based on drag distance
-        const translateY = Math.min(deltaY, 150); // Limit the pull distance
+        // Changed transform order: first translate X, then Y, then rotate
+        const translateY = Math.min(deltaY, 150);
         reloadIndicator.style.transform = `translateX(-50%) translateY(${translateY}px) rotate(${deltaY * 2}deg)`;
         
         if (deltaY > 100) { // Threshold for refresh
@@ -138,8 +149,8 @@
         const deltaY = e.touches[0].clientY - startY;
         reloadIndicator.classList.add('visible');
         
-        // Move down and rotate based on drag distance
-        const translateY = Math.min(deltaY, 150); // Limit the pull distance
+        // Changed transform order: first translate X, then Y, then rotate
+        const translateY = Math.min(deltaY, 150);
         reloadIndicator.style.transform = `translateX(-50%) translateY(${translateY}px) rotate(${deltaY * 2}deg)`;
         
         if (deltaY > 100) { // Threshold for refresh
@@ -156,7 +167,7 @@
         isDragging = false;
         if (!isReloading) {
             reloadIndicator.classList.remove('visible');
-            reloadIndicator.style.transform = 'translateX(-50%) translateY(0) rotate(0deg)';
+            reloadIndicator.style.transform = 'translateX(-50%) rotate(0deg)';
         }
     };
 
