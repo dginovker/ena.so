@@ -86,6 +86,12 @@
   <div id="media-container"></div>
 
   <script>
+    // Add this near the top of your script
+    const lastVisitTime = localStorage.getItem('lastVisitTime');
+    const currentTime = Date.now();
+    const isFirstVisit = !lastVisitTime || (currentTime - parseInt(lastVisitTime)) > 60000;
+    localStorage.setItem('lastVisitTime', currentTime);
+
     // Set total number of files and valid extensions
     const totalFiles = 77;
     const extensions = ["jpg", "gif", "mp4"];
@@ -185,7 +191,7 @@
 
     // Show suggestive animation after 1 second
     setTimeout(() => {
-        if (!isDragging && !isReloading) {
+        if (!isDragging && !isReloading && isFirstVisit) {
             reloadIndicator.classList.add('visible', 'suggest-pull');
             // Remove classes after animation
             setTimeout(() => {
