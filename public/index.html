@@ -16,6 +16,7 @@
       justify-content: center;
       align-items: center;
       background-color: #f0f0f0;
+      touch-action: none; /* Prevent default touch actions */
     }
     #media-container {
       width: 100%;
@@ -32,9 +33,43 @@
       object-fit: contain;
       border-radius: 10px;
     }
+
+    #reload-indicator {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) rotate(0deg);
+      font-size: 24px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      background-color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    #reload-indicator.visible {
+      opacity: 1;
+    }
+
+    @keyframes spin {
+      from { transform: translateX(-50%) translateY(0) rotate(0deg); }
+      to { transform: translateX(-50%) translateY(0) rotate(360deg); }
+    }
+
+    #reload-indicator.spinning {
+      animation: spin 1s linear infinite;
+    }
   </style>
 </head>
 <body>
+  <!-- Add this right after the body tag -->
+  <div id="reload-indicator">↻</div>
+  
   <!-- Container for the random media -->
   <div id="media-container"></div>
 
@@ -42,6 +77,73 @@
     // Set total number of files and valid extensions
     const totalFiles = 77;
     const extensions = ["jpg", "gif", "mp4"];
+
+    // Add drag refresh functionality
+    let startY = 0;
+    let isDragging = false;
+
+    const reloadIndicator = document.getElementById('reload-indicator');
+    let isReloading = false;
+
+    document.addEventListener('mousedown', (e) => {
+        startY = e.clientY;
+        isDragging = true;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        const deltaY = e.clientY - startY;
+        reloadIndicator.classList.add('visible');
+        
+        // Move down and rotate based on drag distance
+        const translateY = Math.min(deltaY, 150); // Limit the pull distance
+        reloadIndicator.style.transform = `translateX(-50%) translateY(${translateY}px) rotate(${deltaY * 2}deg)`;
+        
+        if (deltaY > 100) { // Threshold for refresh
+            if (!isReloading) {
+                isReloading = true;
+                reloadIndicator.classList.add('spinning');
+                setTimeout(() => location.reload(), 500); // Add slight delay for animation
+            }
+        }
+    });
+
+    document.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        
+        const deltaY = e.touches[0].clientY - startY;
+        reloadIndicator.classList.add('visible');
+        
+        // Move down and rotate based on drag distance
+        const translateY = Math.min(deltaY, 150); // Limit the pull distance
+        reloadIndicator.style.transform = `translateX(-50%) translateY(${translateY}px) rotate(${deltaY * 2}deg)`;
+        
+        if (deltaY > 100) { // Threshold for refresh
+            if (!isReloading) {
+                isReloading = true;
+                reloadIndicator.classList.add('spinning');
+                setTimeout(() => location.reload(), 500); // Add slight delay for animation
+            }
+        }
+    });
+
+    // Update reset transform to include translateY
+    const resetIndicator = () => {
+        isDragging = false;
+        if (!isReloading) {
+            reloadIndicator.classList.remove('visible');
+            reloadIndicator.style.transform = 'translateX(-50%) translateY(0) rotate(0deg)';
+        }
+    };
+
+    document.addEventListener('mouseup', resetIndicator);
+    document.addEventListener('touchend', resetIndicator);
 
     // Generate a random number and select the corresponding file
     const randomIndex = String(Math.floor(Math.random() * totalFiles) + 1).padStart(4, '0');
