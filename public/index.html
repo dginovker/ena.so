@@ -100,6 +100,7 @@
     // Add VIP image tracking
     const vipImages = [56, 59, 57, 53, 54, 64, 66, 42, 14, 51, 7, 21];
     const visitCount = parseInt(localStorage.getItem('visitCount') || '0');
+    const seenVipImages = JSON.parse(localStorage.getItem('seenVipImages') || '[]');
     localStorage.setItem('visitCount', visitCount + 1);
 
     // Set total number of files and valid extensions
@@ -124,7 +125,6 @@
         const deltaY = e.clientY - startY;
         reloadIndicator.classList.add('visible');
         
-        // Changed transform order: first translate X, then Y, then rotate
         const translateY = Math.min(deltaY, 150);
         reloadIndicator.style.transform = `translateX(-50%) translateY(${translateY}px) rotate(${deltaY * 2}deg)`;
         
@@ -132,7 +132,9 @@
             if (!isReloading) {
                 isReloading = true;
                 reloadIndicator.classList.add('spinning');
-                setTimeout(() => location.reload(), 500); // Add slight delay for animation
+                // Reset the hint cooldown time when manually reloading
+                localStorage.setItem('lastHintTime', Date.now().toString());
+                setTimeout(() => location.reload(), 500);
             }
         }
     });
@@ -148,7 +150,6 @@
         const deltaY = e.touches[0].clientY - startY;
         reloadIndicator.classList.add('visible');
         
-        // Changed transform order: first translate X, then Y, then rotate
         const translateY = Math.min(deltaY, 150);
         reloadIndicator.style.transform = `translateX(-50%) translateY(${translateY}px) rotate(${deltaY * 2}deg)`;
         
@@ -156,7 +157,9 @@
             if (!isReloading) {
                 isReloading = true;
                 reloadIndicator.classList.add('spinning');
-                setTimeout(() => location.reload(), 500); // Add slight delay for animation
+                // Reset the hint cooldown time when manually reloading
+                localStorage.setItem('lastHintTime', Date.now().toString());
+                setTimeout(() => location.reload(), 500);
             }
         }
     });
@@ -176,11 +179,17 @@
     // Generate a random number and select the corresponding file
     const getRandomFile = () => {
         if (visitCount < 5) {
-            // For first 5 visits, select from VIP images
-            const randomVipIndex = Math.floor(Math.random() * vipImages.length);
-            return String(vipImages[randomVipIndex]).padStart(4, '0');
+            // Filter out already seen VIP images
+            const availableVipImages = vipImages.filter(img => !seenVipImages.includes(img));
+            const randomVipIndex = Math.floor(Math.random() * availableVipImages.length);
+            const selectedImage = availableVipImages[randomVipIndex];
+            
+            // Track this image as seen
+            seenVipImages.push(selectedImage);
+            localStorage.setItem('seenVipImages', JSON.stringify(seenVipImages));
+            
+            return String(selectedImage).padStart(4, '0');
         } else {
-            // After 5 visits, select from all images
             return String(Math.floor(Math.random() * totalFiles) + 1).padStart(4, '0');
         }
     };
@@ -210,16 +219,38 @@
       }
     }
 
-    // Show suggestive animation after 1 second
-    setTimeout(() => {
-        if (!isDragging && !isReloading) {
+    // Modify the reload hint to repeat every 5 seconds
+    const showHint = () => {
+        const lastHintTime = parseInt(localStorage.getItem('lastHintTime') || '0');
+        const currentTime = Date.now();
+        const HINT_COOLDOWN = 60000; // 60 seconds initial cooldown
+        
+        if (!isDragging && !isReloading && (currentTime - lastHintTime > HINT_COOLDOWN)) {
             reloadIndicator.classList.add('visible', 'suggest-pull');
+            
             // Remove classes after animation
             setTimeout(() => {
                 reloadIndicator.classList.remove('visible', 'suggest-pull');
             }, 1500);
+
+            // Set up recurring hints every 5 seconds
+            const hintInterval = setInterval(() => {
+                if (!isDragging && !isReloading) {
+                    reloadIndicator.classList.add('visible', 'suggest-pull');
+                    setTimeout(() => {
+                        reloadIndicator.classList.remove('visible', 'suggest-pull');
+                    }, 1500);
+                }
+            }, 5000);
+
+            // Clear interval if page is reloaded or user interacts
+            document.addEventListener('mousedown', () => clearInterval(hintInterval), { once: true });
+            document.addEventListener('touchstart', () => clearInterval(hintInterval), { once: true });
         }
-    }, 1000);
+    };
+
+    // Show first hint after 1 second
+    setTimeout(showHint, 1000);
   </script>
 </body>
 </html>
