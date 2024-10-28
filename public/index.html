@@ -97,11 +97,10 @@
   <div id="media-container"></div>
 
   <script>
-    // Add this near the top of your script
-    const lastVisitTime = localStorage.getItem('lastVisitTime');
-    const currentTime = Date.now();
-    const isFirstVisit = !lastVisitTime || (currentTime - parseInt(lastVisitTime)) > 60000;
-    localStorage.setItem('lastVisitTime', currentTime);
+    // Add VIP image tracking
+    const vipImages = [56, 59, 57, 53, 54, 64, 66, 42, 14, 51, 7, 21];
+    const visitCount = parseInt(localStorage.getItem('visitCount') || '0');
+    localStorage.setItem('visitCount', visitCount + 1);
 
     // Set total number of files and valid extensions
     const totalFiles = 75;
@@ -175,7 +174,18 @@
     document.addEventListener('touchend', resetIndicator);
 
     // Generate a random number and select the corresponding file
-    const randomIndex = String(Math.floor(Math.random() * totalFiles) + 1).padStart(4, '0');
+    const getRandomFile = () => {
+        if (visitCount < 5) {
+            // For first 5 visits, select from VIP images
+            const randomVipIndex = Math.floor(Math.random() * vipImages.length);
+            return String(vipImages[randomVipIndex]).padStart(4, '0');
+        } else {
+            // After 5 visits, select from all images
+            return String(Math.floor(Math.random() * totalFiles) + 1).padStart(4, '0');
+        }
+    };
+
+    const randomIndex = getRandomFile();
     
     // Loop through extensions to find an existing file
     let selectedFile = null;
@@ -202,7 +212,7 @@
 
     // Show suggestive animation after 1 second
     setTimeout(() => {
-        if (!isDragging && !isReloading && isFirstVisit) {
+        if (!isDragging && !isReloading) {
             reloadIndicator.classList.add('visible', 'suggest-pull');
             // Remove classes after animation
             setTimeout(() => {
