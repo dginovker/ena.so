@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Life</title>
+</head>
+
+<body>
+    <div id="passwordSection" style="text-align: center; margin-top: 100px; display: none;">
+        <h2>Enter the password to continue</h2>
+        <input id="passwordInput" placeholder="Enter password">
+        <button onclick="checkPassword()">Submit</button>
+    </div>
+
+    <div id="welcomeMessage" style="text-align: center; margin-top: 50px; margin-bottom: 20px;">
+        <p>Welcome to Ena's life</p>
+        <p>Click where you were born to get started</p>
+    </div>
+
+    <div id="map" style="text-align: center; margin-top: 20px;">
+        <pre id="mapArt" style="font-family: monospace; line-height: 1.2; cursor: pointer;"></pre>
+        <div id="coordinates" style="margin-top: 10px; font-family: monospace;">Coordinates: (0, 0)</div>
+    </div>
+
+    <div id="babyActivities" style="text-align: center; margin-top: 30px; display: none;">
+        <p id="ageDisplay">Age: 0</p>
+        <p>Goal: Reach age 2</p>
+        <div style="margin: 20px;">
+            <button id="cryButton" onclick="performActivity('cry')">Cry</button>
+            <span id="cryCounter">0</span>
+        </div>
+        <div style="margin: 20px;">
+            <button id="eatButton" onclick="performActivity('eat')">Eat food</button>
+            <span id="eatCounter">0</span>
+        </div>
+        <div style="margin: 20px;">
+            <button id="sleepButton" onclick="performActivity('sleep')">Sleep</button>
+            <span id="sleepCounter">0</span>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            born: false,
+            location: null,
+            age: 0,
+            activities: {
+                cry: 0,
+                eat: 0,
+                sleep: 0
+            },
+            cooldowns: {
+                cry: false,
+                eat: false,
+                sleep: false
+            }
+        };
+
+        function drawMap(location) {
+            const mapPre = document.querySelector('#map pre');
+            let mapArt = `
+_,--',   _._.--._____
+.--.--';_'-.', ";_      _.,-'
+.'--'.  _.'    {\''-;_ .-.>.'
+      '-:_      )  / \`' '=.
+        ) >     {_/,     /~)
+        |/               \`^ .'`;
+
+            if (location == "Korea") {
+                // Mark Korea with an X
+                mapArt = `
+_,--',   _._.--._____
+.--.--';_'-.', ";_      _.,-'
+.'--'.  _.'    {\''-;_ .-.>.'
+      '-:_      )X / \`' '=.
+        ) >     {_/,     /~)
+        |/               \`^ .'`;
+            } else if (location == "Canada") {
+                // Mark Ontario
+                mapArt = `
+_,--',   _._.--._____
+.--.--';_'-X', ";_      _.,-'
+.'--'.  _.'    {\''-;_ .-.>.'
+      '-:_      )  / \`' '=.
+        ) >     {_/,     /~)
+        |/               \`^ .'`;
+            }
+
+            mapPre.innerHTML = mapArt;
+            document.getElementById('map').style.display = 'block';
+            gameState.location = location;
+        }
+
+        function performActivity(activity) {
+            // Check if button is on cooldown
+            if (gameState.cooldowns[activity]) {
+                return;
+            }
+
+            // Increment counter
+            gameState.activities[activity]++;
+            document.getElementById(`${activity}Counter`).textContent = gameState.activities[activity];
+
+            // Set cooldown
+            gameState.cooldowns[activity] = true;
+            document.getElementById(`${activity}Button`).disabled = true;
+
+            setTimeout(() => {
+                gameState.cooldowns[activity] = false;
+                document.getElementById(`${activity}Button`).disabled = false;
+            }, 1000);
+
+            // Check if sleep count reached 10 to age up
+            if (activity === 'sleep') {
+                if (gameState.activities.sleep % 10 === 0) {
+                    gameState.age++;
+                    document.getElementById('ageDisplay').textContent = `Age: ${gameState.age}`;
+
+                    if (gameState.age === 2) {
+                        alert("Congratulations! You've reached age 2!");
+                        // Here you could add code to progress to the next stage
+                    }
+                }
+            }
+        }
+
+        // Initialize map and add click handler
+        document.addEventListener('DOMContentLoaded', function () {
+            drawMap(null);
+
+            const mapArt = document.getElementById('mapArt');
+            const coordsDisplay = document.getElementById('coordinates');
+
+            // Display coordinates on mousemove
+            mapArt.addEventListener('mousemove', function (e) {
+                const rect = this.getBoundingClientRect();
+                const x = Math.round(e.clientX - rect.left);
+                const y = Math.round(e.clientY - rect.top);
+                coordsDisplay.textContent = `Coordinates: (${x}, ${y})`;
+            });
+
+            mapArt.addEventListener('click', function (e) {
+                // Rough coordinates for Korea and Canada based on ASCII art
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                if (y > 30 && y < 70 && x > 380) {
+                    drawMap("Korea");
+                    if (!gameState.born) {
+                        gameState.born = true;
+                        document.getElementById('welcomeMessage').style.display = 'none';
+                        document.getElementById('babyActivities').style.display = 'block';
+                        alert("You've selected Korea! The game begins.");
+                    }
+                }
+                // Check if clicked near Canada/Ontario
+                else if (y > 10 && y < 30 && x > 50 && x < 70) {
+                    drawMap("Canada");
+                }
+            });
+        });
+
+        function checkPassword() {
+            const inputString = document.getElementById('passwordInput').value;
+            fetch(`https://checkstring-vcvbanwd4a-uc.a.run.app/checkString?string=${encodeURIComponent(inputString)}`)
+                .then(response => response.json())
+                .then(isValid => {
+                    if (isValid) {
+                        alert('Good jab!');
+                    } else {
+                        alert('Incorrect password. Try again!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again later.');
+                });
+        }
+    </script>
+</body>
+
+</html>

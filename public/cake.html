@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Password Protected</title>
+</head>
+
+<body>
+    <!-- You're on the right track, but you're not quite there yet.. -->
+    <div style="text-align: center; margin-top: 100px;">
+        <h2>Enter the password to continue</h2>
+        <input id="passwordInput" placeholder="Enter password">
+        <button onclick="checkPassword()">Submit</button>
+    </div>
+
+    <div id="timer" style="position: fixed; bottom: 20px; right: 20px; font-size: 24px; font-family: monospace;">0.00</div>
+
+    <script>
+        // Work smarter, not harder!!!!
+        (function () {
+            function checkPassword() {
+                var _0xabc1 = document['getElementById']('passwordInput')['value'];
+                var _0xdef2 = String['fromCharCode'](119, 97, 100, 100, 108, 101, 32, 119, 97, 100, 100, 108, 101);
+                if ((_0xabc1['toLowerCase']()) === _0xdef2) {
+                    window['location']['href'] = atob('bmV4dC5odG1s');
+                } else {
+                    alert(atob('SW5jb3JyZWN0IHBhc3N3b3JkLiBUcnkgYWdhaW4h'));
+                }
+            }
+            window[atob('Y2hlY2tQYXNzd29yZA==')] = checkPassword;
+        })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        (function() {
+            // This function does not lead to the answer. The answer is in the above function.
+            let time = 10;
+            let speed = 1;
+            
+            const funMessages = [
+                "ouchy!", "meow :3", "quack@@", "boop!", "*purr*", 
+                "nya~", "beep boop!", "hewwo!", "rawr xD", "squeek!", "Check code"
+            ];
+            
+            function createFloatingText(e) {
+                const text = funMessages[Math.floor(Math.random() * funMessages.length)];
+                const span = document.createElement('span');
+                span.textContent = text;
+                span.style.position = 'fixed';
+                span.style.left = (e.clientX - 20) + 'px';
+                span.style.bottom = (window.innerHeight - e.clientY) + 'px';
+                span.style.animation = 'float 1s ease-out';
+                span.style.pointerEvents = 'none';  // Prevent new clicks on the text
+                document.body.appendChild(span);
+                
+                // Remove the element after animation
+                setTimeout(() => span.remove(), 1000);
+            }
+            
+            // Add click handler to timer
+            document.getElementById('timer').addEventListener('click', createFloatingText);
+            
+            // Add animation style
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes float {
+                    0% { transform: translateY(0); opacity: 1; }
+                    100% { transform: translateY(-50px); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            function updateTimer() {
+                // The answer is in the checkPassword function, I promise
+                time += speed;
+                speed *= 1.01;
+                document.getElementById('timer').textContent = (time / 100).toFixed(2);
+                requestAnimationFrame(updateTimer);
+                // You don't need to deobfuscate it by hand. Use your brain!!
+            }
+            
+            updateTimer();
+        })();
+    </script>
+</body>
+
+</html>
