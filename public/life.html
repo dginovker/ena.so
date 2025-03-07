@@ -25,19 +25,68 @@
     <div id="babyActivities" style="text-align: center; margin-top: 30px; display: none;">
         <p id="ageDisplay">Age: 0</p>
         <p>Goal: Reach age 2</p>
-        <div style="margin: 20px;">
+        <div style="margin: 20px; position: relative;">
             <button id="cryButton" onclick="performActivity('cry')">Cry</button>
             <span id="cryCounter">0</span>
         </div>
-        <div style="margin: 20px;">
+        <div style="margin: 20px; position: relative;">
             <button id="eatButton" onclick="performActivity('eat')">Eat food</button>
             <span id="eatCounter">0</span>
         </div>
-        <div style="margin: 20px;">
+        <div style="margin: 20px; position: relative;">
             <button id="sleepButton" onclick="performActivity('sleep')">Sleep</button>
             <span id="sleepCounter">0</span>
         </div>
     </div>
+
+    <style>
+        @keyframes float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+        
+        .zzz {
+            position: absolute;
+            color: #6b8cff;
+            font-weight: bold;
+            font-size: 16px;
+            animation: float-up 2s forwards;
+            pointer-events: none;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .cry-text {
+            position: absolute;
+            color: #ff6b6b;
+            font-weight: bold;
+            font-size: 16px;
+            animation: float-up 2s forwards;
+            pointer-events: none;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .eat-text {
+            position: absolute;
+            color: #ff9d6b;
+            font-weight: bold;
+            font-size: 16px;
+            animation: float-up 2s forwards;
+            pointer-events: none;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
 
     <script>
         let gameState = {
@@ -96,32 +145,81 @@ _,--',   _._.--._____
             if (gameState.cooldowns[activity]) {
                 return;
             }
-
+            
             // Increment counter
             gameState.activities[activity]++;
             document.getElementById(`${activity}Counter`).textContent = gameState.activities[activity];
-
+            
             // Set cooldown
             gameState.cooldowns[activity] = true;
             document.getElementById(`${activity}Button`).disabled = true;
-
+            
+            // Add text animations based on activity
+            if (activity === 'sleep') {
+                const sleepButton = document.getElementById('sleepButton');
+                const zzz = document.createElement('div');
+                zzz.textContent = 'Zzz';
+                zzz.className = 'zzz';
+                
+                // Add to the parent div of the sleep button
+                sleepButton.parentNode.appendChild(zzz);
+                
+                // Remove the element after animation completes
+                setTimeout(() => {
+                    zzz.remove();
+                }, 2000);
+                
+                // Check if sleep count reached 5 to age up
+                if (gameState.activities.sleep % 5 === 0) {
+                    gameState.age++;
+                    document.getElementById('ageDisplay').textContent = `Age: ${gameState.age}`;
+                    
+                    if (gameState.age === 2) {
+                        alert("Congratulations! You've reached age 2!");
+                        // Redirect to life2.html after a short delay
+                        setTimeout(() => {
+                            window.location.href = 'life2.html';
+                        }, 1500);
+                    }
+                }
+            } else if (activity === 'cry') {
+                const cryButton = document.getElementById('cryButton');
+                const cryText = document.createElement('div');
+                
+                // Random cry texts
+                const cryTexts = ["Waa!!", "*sob*", "WAAAAAAA", "Boo hoo!", "😭", "Waah!", "Waaaah!"];
+                cryText.textContent = cryTexts[Math.floor(Math.random() * cryTexts.length)];
+                cryText.className = 'cry-text';
+                
+                // Add to the parent div of the cry button
+                cryButton.parentNode.appendChild(cryText);
+                
+                // Remove the element after animation completes
+                setTimeout(() => {
+                    cryText.remove();
+                }, 2000);
+            } else if (activity === 'eat') {
+                const eatButton = document.getElementById('eatButton');
+                const eatText = document.createElement('div');
+                
+                // Random eat texts
+                const eatTexts = ["nom nom :3", "yummy!", "wa", "Mmm!", "얌얌", "Nom!"];
+                eatText.textContent = eatTexts[Math.floor(Math.random() * eatTexts.length)];
+                eatText.className = 'eat-text';
+                
+                // Add to the parent div of the eat button
+                eatButton.parentNode.appendChild(eatText);
+                
+                // Remove the element after animation completes
+                setTimeout(() => {
+                    eatText.remove();
+                }, 2000);
+            }
+            
             setTimeout(() => {
                 gameState.cooldowns[activity] = false;
                 document.getElementById(`${activity}Button`).disabled = false;
             }, 1000);
-
-            // Check if sleep count reached 10 to age up
-            if (activity === 'sleep') {
-                if (gameState.activities.sleep % 10 === 0) {
-                    gameState.age++;
-                    document.getElementById('ageDisplay').textContent = `Age: ${gameState.age}`;
-
-                    if (gameState.age === 2) {
-                        alert("Congratulations! You've reached age 2!");
-                        // Here you could add code to progress to the next stage
-                    }
-                }
-            }
         }
 
         // Initialize map and add click handler

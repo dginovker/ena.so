@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Life - Age 2</title>
+    <style>
+        body {
+            font-family: monospace;
+            text-align: center;
+            margin: 20px;
+        }
+
+        #game-container {
+            display: inline-block;
+            margin: 20px auto;
+            position: relative;
+        }
+
+        #game-area {
+            white-space: pre;
+            line-height: 1.2;
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #score-display {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+
+        #restart-button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .instructions {
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Playing with Friends</h1>
+    <div class="instructions">
+        <p>Click, use WASD or the Arrow Keys to move Ena (O) across safely!</p>
+        <p>Avoid the cars (X) and reach the other side to score points.</p>
+    </div>
+
+    <div id="score-display">Score: 0</div>
+
+    <div id="game-container">
+        <pre id="game-area"></pre>
+        <div id="game-over">
+            <h2>Game Over!</h2>
+            <p>You got hit by a car!</p>
+            <p id="final-score">Your score: 0</p>
+            <button id="restart-button">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Game configuration
+        const config = {
+            width: 40,
+            height: 15,
+            playerChar: 'O',
+            carChar: 'X',
+            roadChar: '-',
+            sideChar: '|',
+            grassChar: '#',
+            frameRate: 200, // milliseconds between frames
+            carSpawnRate: 0.2, // probability of spawning a car in each lane per frame
+            difficultyIncrease: 0.01 // how much to increase car spawn rate per crossing
+        };
+
+        // Game state
+        let gameState = {
+            player: { x: 20, y: 14 },
+            cars: [],
+            score: 0,
+            isGameOver: false,
+            carSpeed: 1,
+            currentSpawnRate: config.carSpawnRate,
+            lastLane: 14 // Track the last lane the player was in for scoring
+        };
+
+        // Initialize game area
+        const gameArea = document.getElementById('game-area');
+        const scoreDisplay = document.getElementById('score-display');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScore = document.getElementById('final-score');
+        const restartButton = document.getElementById('restart-button');
+
+        // Create the game grid
+        function createGrid() {
+            let grid = Array(config.height).fill().map(() => Array(config.width).fill(' '));
+            
+            // Add grass on top and bottom
+            for (let x = 0; x < config.width; x++) {
+                grid[0][x] = config.grassChar;
+                grid[config.height - 1][x] = config.grassChar;
+            }
+            
+            // Add road and sides
+            for (let y = 1; y < config.height - 1; y++) {
+                for (let x = 0; x < config.width; x++) {
+                    grid[y][x] = config.roadChar;
+                }
+                grid[y][0] = config.sideChar;
+                grid[y][config.width - 1] = config.sideChar;
+            }
+            
+            return grid;
+        }
+
+        // Render the game
+        function render() {
+            let grid = createGrid();
+            
+            // Add cars to grid
+            for (const car of gameState.cars) {
+                if (car.x >= 0 && car.x < config.width) {
+                    grid[car.y][car.x] = config.carChar;
+                }
+            }
+            
+            // Add player to grid
+            grid[gameState.player.y][gameState.player.x] = config.playerChar;
+            
+            // Convert grid to string
+            let output = '';
+            for (const row of grid) {
+                output += row.join('') + '\n';
+            }
+            
+            gameArea.textContent = output;
+        }
+
+        // Update game state
+        function update() {
+            if (gameState.isGameOver) return;
+            
+            // Move cars
+            for (let i = gameState.cars.length - 1; i >= 0; i--) {
+                const car = gameState.cars[i];
+                
+                // Move car based on direction
+                car.x += car.direction * gameState.carSpeed;
+                
+                // Remove cars that are off-screen
+                if (car.x < 0 || car.x >= config.width) {
+                    gameState.cars.splice(i, 1);
+                }
+                
+                // Check for collision with player
+                if (car.x === gameState.player.x && car.y === gameState.player.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Spawn new cars
+            for (let y = 1; y < config.height - 1; y++) {
+                if (Math.random() < gameState.currentSpawnRate) {
+                    // Determine direction (left or right)
+                    const direction = (y % 2 === 0) ? 1 : -1;
+                    const startX = (direction === 1) ? 1 : config.width - 2;
+                    
+                    // Check if there's already a car at the spawn point
+                    const carAtSpawn = gameState.cars.some(car => car.x === startX && car.y === y);
+                    
+                    if (!carAtSpawn) {
+                        gameState.cars.push({ x: startX, y, direction });
+                    }
+                }
+            }
+            
+            // Check if player crossed a lane (moved up)
+            if (gameState.player.y < gameState.lastLane) {
+                // Award points for each lane crossed
+                const lanesCrossed = gameState.lastLane - gameState.player.y;
+                gameState.score += lanesCrossed;
+                scoreDisplay.textContent = `Score: ${gameState.score}`;
+                gameState.lastLane = gameState.player.y;
+                
+                // Increase difficulty slightly for each lane crossed
+                gameState.currentSpawnRate += config.difficultyIncrease * lanesCrossed;
+            }
+            
+            // Reset lastLane if player moved down
+            if (gameState.player.y > gameState.lastLane) {
+                gameState.lastLane = gameState.player.y;
+            }
+            
+            // Check if player reached the top (crossed successfully)
+            if (gameState.player.y === 0) {
+                // Reset player position
+                gameState.player.y = config.height - 1;
+                gameState.lastLane = config.height - 1;
+            }
+            
+            render();
+        }
+
+        // Handle player movement
+        function handleClick(event) {
+            if (gameState.isGameOver) return;
+            
+            const rect = gameArea.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+            
+            // Calculate which cell was clicked (approximate)
+            const cellWidth = rect.width / config.width;
+            const cellHeight = rect.height / config.height;
+            
+            const gridX = Math.floor(clickX / cellWidth);
+            const gridY = Math.floor(clickY / cellHeight);
+            
+            // Move player towards the clicked position
+            if (gridY < gameState.player.y) {
+                gameState.player.y--;
+            } else if (gridY > gameState.player.y) {
+                gameState.player.y++;
+            }
+            
+            if (gridX < gameState.player.x) {
+                gameState.player.x--;
+            } else if (gridX > gameState.player.x) {
+                gameState.player.x++;
+            }
+            
+            // Ensure player stays within bounds
+            gameState.player.x = Math.max(1, Math.min(config.width - 2, gameState.player.x));
+            gameState.player.y = Math.max(0, Math.min(config.height - 1, gameState.player.y));
+            
+            // Check for collision after moving
+            for (const car of gameState.cars) {
+                if (car.x === gameState.player.x && car.y === gameState.player.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            render();
+        }
+
+        // Handle keyboard input
+        function handleKeyDown(event) {
+            if (gameState.isGameOver) return;
+            
+            // Get key pressed
+            const key = event.key.toLowerCase();
+            
+            // Move player based on key
+            if (key === 'w' || key === 'arrowup') {
+                gameState.player.y = Math.max(0, gameState.player.y - 1);
+            } else if (key === 's' || key === 'arrowdown') {
+                gameState.player.y = Math.min(config.height - 1, gameState.player.y + 1);
+            } else if (key === 'a' || key === 'arrowleft') {
+                gameState.player.x = Math.max(1, gameState.player.x - 1);
+            } else if (key === 'd' || key === 'arrowright') {
+                gameState.player.x = Math.min(config.width - 2, gameState.player.x + 1);
+            } else {
+                // Not a movement key
+                return;
+            }
+            
+            // Prevent default action (scrolling)
+            event.preventDefault();
+            
+            // Check for collision after moving
+            for (const car of gameState.cars) {
+                if (car.x === gameState.player.x && car.y === gameState.player.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            render();
+        }
+
+        // Game over
+        function gameOver() {
+            gameState.isGameOver = true;
+            finalScore.textContent = `Your score: ${gameState.score}`;
+            gameOverScreen.style.display = 'block';
+        }
+
+        // Restart game
+        function restartGame() {
+            gameState = {
+                player: { x: 20, y: 14 },
+                cars: [],
+                score: 0,
+                isGameOver: false,
+                carSpeed: 1,
+                currentSpawnRate: config.carSpawnRate,
+                lastLane: 14
+            };
+            
+            gameOverScreen.style.display = 'none';
+            scoreDisplay.textContent = `Score: 0`;
+            render();
+        }
+
+        // Initialize game
+        function init() {
+            render();
+            gameArea.addEventListener('click', handleClick);
+            document.addEventListener('keydown', handleKeyDown);
+            restartButton.addEventListener('click', restartGame);
+            
+            // Start game loop
+            setInterval(update, config.frameRate);
+        }
+
+        // Start the game when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+
+</html>
