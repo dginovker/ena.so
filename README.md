@@ -1,5 +1,5 @@
 Local:
-python -m http.server
+python -m http.server -d public
 
 Deploy:
-Push to Github, it's on hosting
+firebase deploy
