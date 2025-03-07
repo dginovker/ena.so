@@ -88,8 +88,9 @@
             sideChar: '|',
             grassChar: '#',
             frameRate: 200, // milliseconds between frames
-            carSpawnRate: 0.2, // probability of spawning a car in each lane per frame
-            difficultyIncrease: 0.01 // how much to increase car spawn rate per crossing
+            carSpawnRate: 0.1, // Reduced base spawn rate
+            difficultyIncrease: 0.01,
+            laneMultiplier: 1.2 // New multiplier for increasing difficulty by lane
         };
 
         // Game state
@@ -180,7 +181,11 @@
             
             // Spawn new cars
             for (let y = 1; y < config.height - 1; y++) {
-                if (Math.random() < gameState.currentSpawnRate) {
+                // Calculate spawn rate based on lane position
+                const laneSpawnRate = gameState.currentSpawnRate * 
+                    Math.pow(config.laneMultiplier, (config.height - y - 2));
+                
+                if (Math.random() < laneSpawnRate) {
                     // Determine direction (left or right)
                     const direction = (y % 2 === 0) ? 1 : -1;
                     const startX = (direction === 1) ? 1 : config.width - 2;
@@ -302,16 +307,28 @@
         // Game over
         function gameOver() {
             gameState.isGameOver = true;
+            // Deduct 3 points but don't go below 0
+            gameState.score = Math.max(0, gameState.score - 3);
             finalScore.textContent = `Your score: ${gameState.score}`;
             gameOverScreen.style.display = 'block';
+            
+            // Change button text and behavior if score > 15
+            if (gameState.score > 15) {
+                restartButton.textContent = "Go to hospital";
+                restartButton.removeEventListener('click', restartGame);
+                restartButton.addEventListener('click', () => {
+                    window.location.href = 'hospital.html';
+                });
+            }
         }
 
         // Restart game
         function restartGame() {
+            const currentScore = gameState.score; // Save the current score
             gameState = {
                 player: { x: 20, y: 14 },
                 cars: [],
-                score: 0,
+                score: currentScore, // Keep the score minus 3
                 isGameOver: false,
                 carSpeed: 1,
                 currentSpawnRate: config.carSpawnRate,
@@ -319,7 +336,13 @@
             };
             
             gameOverScreen.style.display = 'none';
-            scoreDisplay.textContent = `Score: 0`;
+            scoreDisplay.textContent = `Score: ${gameState.score}`;
+            // Reset button text and behavior
+            restartButton.textContent = "Play Again";
+            restartButton.removeEventListener('click', () => {
+                window.location.href = 'hospital.html';
+            });
+            restartButton.addEventListener('click', restartGame);
             render();
         }
 
